@@ -1,0 +1,48 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: black; /* Set a black background */
+    color: white; /* Adjust text color for better visibility */
+}
+
+h1 {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20px;
+}
+
+ul {
+    list-style-type: none; /* Remove bullet points */
+    padding: 0; /* Remove default padding */
+    margin: 0; /* Remove default margin */
+    display: flex; /* Use flexbox for alignment */
+    flex-wrap: wrap; /* Allow items to wrap */
+    justify-content: center; /* Center the list */
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent white background for cards */
+    border-radius: 10px;
+    padding: 20px;
+    margin: 10px;
+    text-align: center;
+    width: 150px; /* Set a fixed width for cards */
+    transition: transform 0.3s; /* Animation effect on hover */
+}
+
+.card a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.card:hover {
+    transform: scale(1.05); /* Slightly enlarge the card on hover */
+}

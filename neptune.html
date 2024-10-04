@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neptune </title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Basic styles for the description box */
+        .description {
+            position: absolute; /* Absolute positioning */
+            top: 20px; /* Distance from the top */
+            right: 20px; /* Distance from the right */
+            background-color: rgba(0, 0, 0, 0.8); /* White background with slight transparency */
+            
+            padding: 10px; /* Padding inside the box */
+            max-width: 300px; /* Maximum width of the description box */
+            display: none; /* Initially hidden */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow effect */
+            z-index: 1; /* Ensure it appears above other elements */
+            font-family: Arial, sans-serif; /* Font style */
+            font-size: 14px; /* Font size */
+            color: #ffffff; /* Text color */
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="description" class="description"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let planet;
+        const description = `
+            Neptune: The Windy Giant. 
+            Neptune is the eighth and farthest planet from the Sun in our solar system. 
+            Known for its striking blue color, Neptune's atmosphere is composed mainly of hydrogen, helium, and methane, which gives it a deep azure hue.
+            With strong winds that can reach up to 1,200 miles per hour, Neptune is the most dynamic planet in our solar system.
+            It has 14 known moons, the largest being Triton, which is unique for its retrograde orbit. 
+            Neptune was discovered in 1846 and is named after the Roman god of the sea, reflecting its vibrant blue color.
+        `;
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Add light
+            const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+            light.position.set(0, 200, 0);
+            scene.add(light);
+            
+            // Load Neptune model
+            loadPlanet('models/neptune.glb', { x: 0, y: 0, z: 0 });
+
+            // Adjust camera position to see the model properly
+            camera.position.set(0, 0, 10); // Camera further back
+
+            // Event listener for window resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            animate();
+        }
+
+        function loadPlanet(modelPath, position) {
+            const loader = new THREE.GLTFLoader();
+            loader.load(modelPath, (gltf) => {
+                planet = gltf.scene;
+                planet.position.set(position.x, position.y, position.z);
+                
+                // Scale the Neptune model to a smaller size
+                const scaleFactor = 0.30; // Tiny scale
+                planet.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                scene.add(planet);
+                
+                // Add hover effect
+                planet.traverse((child) => {
+                    if (child.isMesh) {
+                        child.cursor = 'pointer'; // Change cursor style
+                        child.name = 'neptune'; // Set the name for hover effect
+                    }
+                });
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (planet) {
+                planet.rotation.y += 0.01; // Rotate the planet
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Handle mouse hover to show descriptions
+        window.addEventListener('mousemove', onMouseMove, false);
+
+        function onMouseMove(event) {
+            // Convert mouse position to normalized device coordinates
+            const mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+
+            // Raycaster to detect intersections
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObject(planet, true);
+            const descriptionDiv = document.getElementById('description');
+
+            if (intersects.length > 0) {
+                descriptionDiv.style.display = 'block';
+                descriptionDiv.innerText = description;
+            } else {
+                descriptionDiv.style.display = 'none';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

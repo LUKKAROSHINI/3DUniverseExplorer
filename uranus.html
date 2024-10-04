@@ -1,0 +1,110 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uranus</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container"></div>
+    <div id="description" class="description"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let planet;
+        const description = "Uranus: The Ice Giant."; // Description of Uranus
+
+        function init() {
+            // Scene setup: Create a new scene, camera, and renderer
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Add light to the scene: Create a HemisphereLight to illuminate the planet
+            const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+            light.position.set(0, 200, 0);
+            scene.add(light);
+            
+            // Load Uranus model: Call the loadPlanet function with the model path and position
+            loadPlanet('models/uranus.glb', { x: 0, y: 0, z: 0 });
+
+            // Adjust camera position to see the model properly
+            camera.position.set(0, 0, 10); // Moved camera further back
+
+            // Event listener for window resize to maintain aspect ratio
+            window.addEventListener('resize', onWindowResize, false);
+            
+            animate(); // Start the animation loop
+        }
+
+        function loadPlanet(modelPath, position) {
+            const loader = new THREE.GLTFLoader();
+            loader.load(modelPath, (gltf) => {
+                planet = gltf.scene; // Get the loaded planet model
+                planet.position.set(position.x, position.y, position.z); // Set model position
+                
+                // Scale the Uranus model to a much smaller size
+                const scaleFactor = 0.003; // Further reduced scale for a tinier size
+                planet.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                scene.add(planet); // Add the planet model to the scene
+                
+                // Add hover effect: Change cursor style when hovering over the planet
+                planet.traverse((child) => {
+                    if (child.isMesh) {
+                        child.cursor = 'pointer'; // Change cursor style
+                        child.name = 'uranus'; // Set the name for hover effect
+                    }
+                });
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight; // Update camera aspect ratio
+            camera.updateProjectionMatrix(); // Update camera projection matrix
+            renderer.setSize(window.innerWidth, window.innerHeight); // Adjust renderer size
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); // Request next frame
+            if (planet) {
+                planet.rotation.y += 0.01; // Rotate the planet
+            }
+            renderer.render(scene, camera); // Render the scene
+        }
+
+        // Handle mouse hover to show descriptions
+        window.addEventListener('mousemove', onMouseMove, false);
+
+        function onMouseMove(event) {
+            // Convert mouse position to normalized device coordinates
+            const mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+
+            // Raycaster to detect intersections
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera); // Set raycaster from mouse position
+            
+            const intersects = raycaster.intersectObject(planet, true); // Check for intersections with the planet
+            const descriptionDiv = document.getElementById('description'); // Get the description div
+
+            // Show or hide the description based on mouse hover
+            if (intersects.length > 0) {
+                descriptionDiv.style.display = 'block'; // Show description
+                descriptionDiv.innerText = description; // Set description text
+            } else {
+                descriptionDiv.style.display = 'none'; // Hide description
+            }
+        }
+
+        init(); // Initialize the scene
+    </script>
+</body>
+</html>

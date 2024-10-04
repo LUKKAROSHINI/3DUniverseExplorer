@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saturn </title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #description {
+            position: absolute;
+            top: 50%;
+            left: 20px; /* Position from the left side */
+            transform: translateY(-50%); /* Center vertically */
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: none; /* Initially hidden */
+            pointer-events: none; /* Prevent mouse events on the description */
+            width: 250px; /* Set a width for better layout */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); /* Add shadow for better visibility */
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="description" class="description"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let planet;
+        const descriptions = {
+            saturn: "Saturn: The Ringed Planet.\n\nKnown for its stunning rings, Saturn is the sixth planet from the Sun and is the second-largest in our solar system. It is a gas giant primarily composed of hydrogen and helium, with a beautiful array of rings made of ice and rock particles. Saturn has numerous moons, including Titan, the second-largest moon in the solar system, which is known for its thick atmosphere and lakes of liquid methane. Saturn's unique beauty and characteristics make it a fascinating subject of study in astronomy."
+        };
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Add light
+            const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+            light.position.set(0, 200, 0);
+            scene.add(light);
+            
+            // Load Saturn model
+            loadPlanet('models/saturn.glb', { x: 0, y: 0, z: 0 });
+
+            // Adjust camera position to see the model properly
+            camera.position.set(0, 0, 10); // Moved camera further back
+
+            // Event listener for window resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            animate();
+        }
+
+        function loadPlanet(modelPath, position) {
+            const loader = new THREE.GLTFLoader();
+            loader.load(modelPath, (gltf) => {
+                planet = gltf.scene;
+                planet.position.set(position.x, position.y, position.z);
+                
+                // Scale the Saturn model to a larger size
+                const scaleFactor = 0.17; // Increased scale for a larger size
+                planet.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                scene.add(planet);
+                
+                // Add hover effect
+                planet.traverse((child) => {
+                    if (child.isMesh) {
+                        child.cursor = 'pointer'; // Change cursor style
+                        child.name = 'saturn'; // Set the name for hover effect
+                    }
+                });
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (planet) {
+                planet.rotation.y += 0.01; // Rotate the planet
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Handle mouse hover to show descriptions
+        window.addEventListener('mousemove', onMouseMove, false);
+
+        function onMouseMove(event) {
+            // Convert mouse position to normalized device coordinates
+            const mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+
+            // Raycaster to detect intersections
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObject(planet, true);
+            const descriptionDiv = document.getElementById('description');
+
+            if (intersects.length > 0) {
+                descriptionDiv.style.display = 'block';
+                descriptionDiv.innerText = descriptions['saturn']; // Show detailed description
+            } else {
+                descriptionDiv.style.display = 'none';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

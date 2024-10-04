@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        #floating-description {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="floating-description"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let planets = [];
+        const descriptions = {
+            earth: "🌍 Earth: The Blue Planet 🌍\n\n- Earth's atmosphere acts as a shield, protecting its inhabitants from harmful solar radiation while creating stunning auroras at the poles.\n- Fun Fact: Earth's rotation is gradually slowing down. In about 140 million years, a day will be 25 hours long!"
+        };
+
+        const floatingDescription = document.getElementById('floating-description');
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Add light
+            const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+            light.position.set(0, 200, 0);
+            scene.add(light);
+            
+            // Load Earth model
+            loadPlanet('models/earth.glb', { x: 0, y: 0, z: 0 }, 'earth');
+
+            // Adjust camera position to see the model properly
+            camera.position.set(0, 0, 10); // Moved camera further back
+
+            // Event listener for window resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            animate();
+        }
+
+        function loadPlanet(modelPath, position, name) {
+            const loader = new THREE.GLTFLoader();
+            loader.load(modelPath, (gltf) => {
+                const planet = gltf.scene;
+                planet.position.set(position.x, position.y, position.z);
+                
+                // Scale the Earth model to a much smaller size
+                const scaleFactor = 0.02;
+                planet.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                scene.add(planet);
+                planets.push({ model: planet, name: name });
+                
+                // Add hover effect
+                planet.traverse((child) => {
+                    if (child.isMesh) {
+                        child.cursor = 'pointer';
+                        child.name = name;
+                    }
+                });
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            planets.forEach((planet) => {
+                planet.model.rotation.y += 0.01; // Rotate planets
+            });
+            renderer.render(scene, camera);
+        }
+
+        // Handle mouse hover to show descriptions in a floating box on the side
+        window.addEventListener('mousemove', onMouseMove, false);
+
+        function onMouseMove(event) {
+            const mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(planets.map(p => p.model), true);
+            if (intersects.length > 0) {
+                const planet = intersects[0].object;
+                const name = planet.name;
+
+                // Show description box on the side
+                floatingDescription.style.display = 'block';
+                floatingDescription.innerText = descriptions[name];
+            } else {
+                floatingDescription.style.display = 'none';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
